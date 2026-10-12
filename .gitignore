@@ -1,0 +1,20 @@
+# Dependencies and build output
+node_modules/
+dist/
+*.tgz
+
+# Editor and OS files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Local harness/profile artifacts, never part of the plugin
+.profile-backup/
+profiles/

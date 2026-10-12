@@ -1,0 +1,48 @@
+{
+  "name": "dsh-balance-pill",
+  "version": "0.1.0",
+  "description": "DeepSeek API balance pill for the DeepSeek Harness composer dock, next to the context meter",
+  "license": "MIT",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "default": "./lib/client.js"
+    },
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
+    }
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "deepseek",
+    "balance",
+    "composer-dock"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rbb30/dsh-balance-pill.git"
+  },
+  "homepage": "https://github.com/rbb30/dsh-balance-pill#readme",
+  "bugs": {
+    "url": "https://github.com/rbb30/dsh-balance-pill/issues"
+  }
+}
