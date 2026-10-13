@@ -4,7 +4,7 @@
 # package is dual-face: this row is the node half (it registers the balance
 # route on `ctx.webServer`), and the same package's `dsh.client` declaration is
 # scanned into the browser roster (`window.__DSH_BOOT__`), where the client half
-# contributes the composer-dock pill.
+# contributes the composer-dock pill and its detail panel.
 #
 # No secret appears here: the API key is resolved per request from the
 # credentials seam (falling back to $DEEPSEEK_API_KEY).
@@ -15,5 +15,11 @@
       inject: [webServer]
       # Optional overrides (defaults shown):
       # config:
-      #   refreshIntervalMs: 60000   # poll interval the browser half uses
-      #   cacheMs: 20000             # upstream response cache lifetime
+      #   refreshIntervalMs: 60000        # poll interval the browser half uses
+      #   cacheMs: 20000                  # upstream response cache lifetime
+      #   # Chinese public holidays are off-peak in full and cannot be detected
+      #   # locally; list them as UTC day keys so the phase stays exact.
+      #   cnHolidays:
+      #     - '2026-10-01'
+      #   # Ledger location (default: $DSH_HOME/.dsh-balance-pill-usage.json).
+      #   usageFile: /path/to/usage.json

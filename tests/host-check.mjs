@@ -1,16 +1,17 @@
 /**
  * Host-half check: run `apply` against a minimal fake Cordis context, dispatch
  * the registered route through a real HTTP server, and print what the browser
- * half would receive. The API key is read from `$DEEPSEEK_API_KEY`, falling
- * back to the `DEEPSEEK_API_KEY` entry of `${DSH_HOME:-$HOME/.dsh}/.credentials.yaml`.
- * The key itself is never printed.
+ * half would receive. The API key is read from `$DEEPSEEK_API_KEY`, falling back
+ * to the `DEEPSEEK_API_KEY` entry of `${DSH_HOME:-$HOME/.dsh}/.credentials.yaml`;
+ * the key itself is never printed. The usage ledger goes to a throwaway temp
+ * file, so this check never touches your real ledger.
  *
  *   node tests/host-check.mjs
  */
 
 import http from 'node:http'
-import { readFileSync } from 'node:fs'
-import { homedir } from 'node:os'
+import { mkdtempSync, readFileSync } from 'node:fs'
+import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { apply } from '../lib/index.js'
 
@@ -27,7 +28,7 @@ function apiKey() {
   }
   try {
     const text = readFileSync(join(DSH_HOME, '.credentials.yaml'), 'utf8')
-    const match = text.match(/^\s*DEEPSEEK_API_KEY\s*:\s*(.+)$/m)
+    const match = text.match(/^\s*DEEPSEEK_API_KEY\s*:\s*(.*)$/m)
     return match?.[1]?.trim().replace(/^["']|["']$/g, '')
   } catch (error) {
     console.log('credentials file unreadable:', error.message)
@@ -38,6 +39,9 @@ function apiKey() {
 const key = apiKey()
 console.log('key found:', key !== undefined)
 
+const usageFile = join(mkdtempSync(join(tmpdir(), 'dsh-balance-pill-')), 'usage.json')
+console.log('ledger:', usageFile)
+
 const routes = []
 const ctx = {
   get: (name) => (name === 'credentials'
@@ -47,7 +51,7 @@ const ctx = {
   webServer: { register: (route) => { routes.push(route); return () => {} } },
 }
 
-apply(ctx, undefined)
+apply(ctx, { usageFile })
 console.log('routes registered:', routes.map(route => `${route.kind} ${route.path}`))
 
 const server = http.createServer((req, res) => {
@@ -56,12 +60,27 @@ const server = http.createServer((req, res) => {
   void route.handler(req, res)
 })
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve))
-const url = `http://127.0.0.1:${server.address().port}/dsh-balance-pill`
+const base = `http://127.0.0.1:${server.address().port}/dsh-balance-pill`
 
-for (const method of ['GET', 'POST', 'HEAD']) {
+for (const [label, url, method] of [
+  ['GET', base, 'GET'],
+  ['GET (cached)', base, 'GET'],
+  ['POST', base, 'POST'],
+  ['HEAD', base, 'HEAD'],
+]) {
   const response = await fetch(url, { method })
   const body = await response.text()
-  console.log(`--- ${method} -> ${response.status} ${response.headers.get('content-type')}`)
-  console.log(body.slice(0, 600))
+  console.log(`--- ${label} -> ${response.status} ${response.headers.get('content-type') ?? ''}`)
+  console.log(body.slice(0, 900))
+}
+
+// The ledger is created on the first successful read; its `last` sample is what
+// the next read diffs against. The write is fire-and-forget, so give it a moment.
+await new Promise(resolve => setTimeout(resolve, 150))
+try {
+  console.log('--- ledger on disk ---')
+  console.log(readFileSync(usageFile, 'utf8'))
+} catch (error) {
+  console.log('no ledger written:', error.message)
 }
 server.close()
